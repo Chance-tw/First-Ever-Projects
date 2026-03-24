@@ -1,0 +1,972 @@
+#include <iostream>
+#include <cmath>
+#include <string>
+#include <stdexcept>
+#include <cstdlib>
+#include <utility>
+#include <ctime>
+using namespace std;
+
+// blank=0
+// player one(x)=1
+// player two(o)=2
+
+int playerturn=1;
+int board[6][3]={{0, 0, 0},
+                 {0, 0, 0},
+                 {0, 0, 0},
+                 {0, 0, 0},
+                 {0, 0, 0},
+                 {0, 0, 0}};
+bool multiplayer=false;
+bool singleplayer=false;
+bool singleormulti=true;
+bool botfirst=false;
+
+//creates any lank square (0)
+    void createblank(int row, int column);
+//creates any square that is an x (1)
+    void createx(int row, int column);
+//creates any square that is an o (2)
+    void createo(int row, int column);
+//iterates through board[6][3] and creates it by checking the values of the top row of a square then the bottom row
+    void createboard();
+//takes the players inputs
+    void player();
+//clears the board by iterating through board[6][3] and setting every value equal to 0
+    void resetboard();
+//Basic bot that prioritizes winning, blocking, and the corners and the center of the board
+    void bot();
+//priorizes the x winning for the bot based on the order win conditions appear in the if else statement
+    void xprioritize(int botoutput, int winpos);
+//priorizes the o winning for the bot based on the order win conditions appear in the if else statement
+    void oprioritize(int botoutput, int winpos);
+//selects a random corner for the bot to play in
+    void randcorner(int botXorO);
+//creates the spacing to center the board in terminal
+    void spacing();
+//clears terminal
+    void clearterm();
+//checks the corners of the board for the bot
+    int cornercheck(int botXorO);
+//checks who won the game, if it was a tie, if the game is ongoing, or if the game has not started
+    int gameoutcome();
+//returns an integer corresponding to a win condition
+    int wincondpos();
+//win condition checks for x
+    pair<int, int> xhorwincond();
+    pair<int, int> xvertwincond();
+    pair<int, int> xdiagwincond();
+//win condition checks for o
+    pair<int, int> ohorwincond();
+    pair<int, int> overtwincond();
+    pair<int, int> odiagwincond();
+//returns true if the player answers y to playing again
+    bool playagain();
+
+int main(){
+    srand(time(0));
+    bool game=true;
+    do{
+        clearterm();
+        createboard();
+        if (gameoutcome()==1){
+            cout<<"                       | X's win! |\n";
+            game=playagain();
+        }
+        else if (gameoutcome()==2){
+            cout<<"                       | O's win! |\n";
+            game=playagain();
+        }
+        else if (gameoutcome()==3){
+            cout<<"                      | Tie game! |\n";
+            game=playagain();
+        }
+        //else gameoutcome==0, boards empty
+        //gameoutcome==4, game ongoing
+        player();
+    }while (game);
+}
+
+void resetboard(){
+    //iterate through board[6][3] and set every space back to a 0 (blank)
+    for (int row=0;row<6;row++){
+        for (int col=0;col<3;col++){
+            board[row][col]=0;
+        }
+    }
+    clearterm();
+}
+
+bool playagain(){
+    string newgame;
+    while (true){
+        cout<<"Play again (Y/N): ";
+        getline(cin, newgame);
+        if (newgame.length()==1){
+            if (newgame=="Y" || newgame=="y"){
+                //when player() is called again in main() the single or multiplayer question will be asked again
+                singleormulti=true;
+                resetboard();
+                createboard();
+                return true;
+            }
+            else if (newgame=="N" || newgame=="n"){
+                exit(0);
+            }
+            else{
+                cout<<"Invalid input!\n";
+            }
+        }
+        else{
+            cout<<"Invalid input!\n";
+        }
+    }
+    return false;
+}
+
+void createblank(int row, int column){
+    if ((row==0 || row==1) && column==0){
+        spacing();
+        if (row==0){
+            cout<<"    |";
+        }
+        else{
+            cout<<"____|";
+        }
+    }
+    else if ((row==0 || row==1) && column==1){
+        if (row==0){
+            cout<<"    ";
+        }
+        else{
+            cout<<"____";
+        }
+    }
+    else if ((row==0 || row==1) && column==2){
+        if (row==0){
+            cout<<"|    \n";
+        }
+        else{
+            cout<<"|____\n";
+        }
+    }
+    else if ((row==2 || row==3) && column==0){
+        spacing();
+        if (row==2){
+            cout<<"    |";
+        }
+        else{
+            cout<<"____|";
+        }
+    }
+    else if ((row==2 || row==3) && column==1){
+        if (row==2){
+            cout<<"    ";
+        }
+        else{
+            cout<<"____";
+        }
+    }
+    else if ((row==2 || row==3) && column==2){
+        if (row==2){
+            cout<<"|    \n";
+        }
+        else{
+            cout<<"|____\n";
+        }
+    }
+    else if ((row==4 || row==5) && column==0){
+        spacing();
+        cout<<"    |";
+    }
+    else if ((row==4 || row==5) && column==1){
+        cout<<"    ";
+    }
+    else if ((row==4 || row==5) && column==2){
+        cout<<"|    \n";
+    }
+}
+
+void createx(int row, int column){
+    if ((row==0 || row==1) && column==0){
+        spacing();
+        if (row==0){
+            cout<<" \\/ |";
+        }
+        else{
+            cout<<"_/\\_|";
+        }
+    }
+    else if ((row==0 || row==1) && column==1){
+        if (row==0){
+            cout<<" \\/ ";
+        }
+        else{
+            cout<<"_/\\_";
+        }
+    }
+    else if ((row==0 || row==1) && column==2){
+        if (row==0){
+            cout<<"| \\/ \n";
+        }
+        else{
+            cout<<"|_/\\_\n";
+        }
+    }
+    else if ((row==2 || row==3) && column==0){
+        spacing();
+        if (row==2){
+            cout<<" \\/ |";
+        }
+        else{
+            cout<<"_/\\_|";
+        }
+    }
+    else if ((row==2 || row==3) && column==1){
+        if (row==2){
+            cout<<" \\/ ";
+        }
+        else{
+            cout<<"_/\\_";
+        }
+    }
+    else if ((row==2 || row==3) && column==2){
+        if (row==2){
+            cout<<"| \\/ \n";
+        }
+        else{
+            cout<<"|_/\\_\n";
+        }
+    }
+    else if ((row==4 || row==5) && column==0){
+        spacing();
+        if (row==4){
+            cout<<" \\/ |";
+        }
+        else{
+            cout<<" /\\ |";
+        }
+    }
+    else if ((row==4 || row==5) && column==1){
+        if (row==4){
+            cout<<" \\/ ";
+        }
+        else{
+            cout<<" /\\ ";
+        }
+    }
+    else if ((row==4 || row==5) && column==2){
+        if (row==4){
+            cout<<"| \\/ \n";
+        }
+        else{
+            cout<<"| /\\ \n";
+        }
+    }
+}
+
+void createo(int row, int column){
+    if ((row==0 || row==1) && column==0){
+        spacing();
+        if (row==0){
+            cout<<" /\\ |";
+        }
+        else{
+            cout<<"_\\/_|";
+        }
+    }
+    else if ((row==0 || row==1) && column==1){
+        if (row==0){
+            cout<<" /\\ ";
+        }
+        else{
+            cout<<"_\\/_";
+        }
+    }
+    else if ((row==0 || row==1) && column==2){
+        if (row==0){
+            cout<<"| /\\ \n";
+        }
+        else{
+            cout<<"|_\\/_\n";
+        }
+    }
+    else if ((row==2 || row==3) && column==0){
+        spacing();
+        if (row==2){
+            cout<<" /\\ |";
+        }
+        else{
+            cout<<"_\\/_|";
+        }
+    }
+    else if ((row==2 || row==3) && column==1){
+        if (row==2){
+            cout<<" /\\ ";
+        }
+        else{
+            cout<<"_\\/_";
+        }
+    }
+    else if ((row==2 || row==3) && column==2){
+        if (row==2){
+            cout<<"| /\\ \n";
+        }
+        else{
+            cout<<"|_\\/_\n";
+        }
+    }
+    else if ((row==4 || row==5) && column==0){
+        spacing();
+        if (row==4){
+            cout<<" /\\ |";
+        }
+        else{
+            cout<<" \\/ |";
+        }
+    }
+    else if ((row==4 || row==5) && column==1){
+        if (row==4){
+            cout<<" /\\ ";
+        }
+        else{
+            cout<<" \\/ ";
+        }
+    }
+    else if ((row==4 || row==5) && column==2){
+        if (row==4){
+            cout<<"| /\\ \n";
+        }
+        else{
+            cout<<"| \\/ \n";
+        }
+    }
+}
+
+void spacing(){
+    for (int i=22;i>0;i--){
+        cout<<" ";
+    }
+}
+
+void clearterm(){
+    #ifdef _WIN32
+        system("CLS");
+    #else
+        system("clear");
+    #endif
+}
+
+void createboard(){
+    spacing();
+    //top spacer/title
+    cout<<"*Tic-Tac-Toe!*\n";
+    //board creation
+        for (int row=0;row<6;row++){
+            for (int column=0;column<3;column++){
+                if (board[row][column]==0){
+                    createblank(row, column);
+                }
+                else if (board[row][column]==1){
+                    createx(row, column);
+                }
+                else if (board[row][column]==2){
+                    createo(row, column);
+                }
+            }
+        }
+    spacing();
+    //bottom spacer
+    for (int i=14;i>0;i--){
+        cout<<"*";
+    }
+    cout<<'\n';
+    if (gameoutcome()==4 || !singleormulti){
+        //when the game is ongoing
+        cout<<"| Top left: TL    | Top middle: TM    | Top right: TR    |\n";
+        cout<<"| Middle left: ML | Center: C         | Middle right: MR |\n";
+        cout<<"| Bottom left: BL | Bottom middle: BM | Bottom right: BR |\n";
+        cout<<"                     | Exit game: X |\n";
+    }
+    else{
+        //when game is not ongoing
+        cout<<"| Top left: TL    | Top middle: TM    | Top right: TR    |\n";
+        cout<<"| Middle left: ML | Center: C         | Middle right: MR |\n";
+        cout<<"| Bottom left: BL | Bottom middle: BM | Bottom right: BR |\n";
+        cout<<"| Singleplayer: S | Multiplayer: M    | Exit game: X     |\n";
+    }
+}
+
+void player(){
+    string playermove;
+    bool correctinput=true;
+    int rowindex;
+    int columnindex;
+    string s_or_m;
+    //asks for the player to select single or multiplayer until a valid input is given
+    while (singleormulti){
+        cout<<"Single or multi player: ";
+        getline(cin, s_or_m);
+        if (s_or_m.length()==1){
+            if (s_or_m=="M" || s_or_m=="m"){
+                multiplayer=true;
+                singleplayer=false;
+                singleormulti=false;
+                playerturn=1;
+                clearterm();
+                createboard();
+                break;
+            }
+            else if (s_or_m=="S" || s_or_m=="s"){
+                singleplayer=true;
+                multiplayer=false;
+                playerturn=1;
+                singleormulti=false;
+                string firstmove;
+                cout<<"Play as X (Y/N): ";
+                getline(cin, firstmove);
+                if (firstmove.length()==1){
+                    if (firstmove=="N" || firstmove=="n"){
+                        botfirst=true;
+                    }
+                    else if (firstmove=="X" || firstmove=="x"){
+                        exit(0);
+                    }
+                    else if (firstmove=="Y" || firstmove=="y"){
+                        botfirst=false;
+                    }
+                    else{
+                        cout<<"Invalid input!\n";
+                        continue;
+                    }
+                }
+                else{
+                    cout<<"Invalid input!\n";
+                    continue;
+                }
+                clearterm();
+                createboard();
+                break;
+            }
+            else if (s_or_m=="X" || s_or_m=="x"){
+                exit(0);
+            }
+            else{
+                cout<<"Invalid input!\n";
+            }
+        }
+        else{
+            cout<<"Invalid input!\n";
+        }
+    }
+    //asks until a valid player input is given
+    while (correctinput){
+        //gives the current players move
+        if (playerturn==1){
+            //bot as x
+            if (botfirst && singleplayer){
+                bot();
+                break;
+            } 
+            //player as x
+            else{
+                cout<<"X's move: ";
+                getline(cin, playermove);
+            }
+        }
+        else if (playerturn==2){
+            //bot as o
+            if (singleplayer && !botfirst){
+                bot();
+                break;
+            }
+            //player as o
+            else{
+                cout<<"O's move: ";
+                getline(cin, playermove);
+            }
+        }
+        //cheacks if input is valid and sets the board space to the current players turn if the input is valid
+        if (playermove.length()==2){
+            char row=playermove[0];
+            char column=playermove[1];
+            bool correctrow=false;
+            bool correctcolumn=false;
+            bool msgsent=false;
+            switch (row){
+                case 'T':
+                case 't':
+                    rowindex = 0;
+                    correctrow=true;
+                    break;
+                case 'M':
+                case 'm':
+                    rowindex = 2;
+                    correctrow=true;
+                    break;
+                case 'B':
+                case 'b':
+                    rowindex = 4;
+                    correctrow=true;
+                    break;
+                default:
+                    cout<<"Invalid input!\n";
+                    msgsent=true;
+                    break;
+            }
+            switch (column){
+                case 'L':
+                case 'l':
+                    columnindex=0;
+                    correctcolumn=true;
+                    break;
+                case 'M':
+                case 'm':
+                    columnindex=1;
+                    correctcolumn=true;
+                    break;
+                case 'R':
+                case 'r':
+                    columnindex=2;
+                    correctcolumn=true;
+                    break;
+                default:
+                    if (!msgsent){
+                        cout<<"Invalid input!\n";
+                        break;
+                    }
+            }
+            if (correctcolumn && correctrow){
+                if (board[rowindex][columnindex]==0 && board[rowindex+1][columnindex]==0){
+                    board[rowindex][columnindex]=playerturn;
+                    board[rowindex+1][columnindex]=playerturn;
+                    correctinput=false;
+                    playerturn++;
+                    if (playerturn==3){
+                        playerturn=1;
+                    }
+                }
+                else{
+                    cout<<"That spot is taken!\n";
+                }
+            }
+        }
+        else if (playermove=="C" || playermove=="c"){
+            if (board[2][1]==0 && board[3][1]==0){
+                board[2][1]=playerturn;
+                board[3][1]=playerturn;
+                playerturn++;
+                if (playerturn==3){
+                    playerturn=1;
+                }
+                correctinput=false;
+            }
+            else{
+                cout<<"That spot is taken!\n";
+            }
+        }
+        else{
+            if (playermove=="x" || playermove=="X"){
+                exit(0);
+            }
+            cout<<"Invalid input!\n";
+        }
+    }
+}
+
+int gameoutcome(){
+    bool boardhasempty=false;
+    bool boardempty=true;
+    //checks if the board is completely empty or just has some empty spots left
+    for (int row=0;row<6;row+=2){
+        for (int col=0;col<3;col++){
+            if (board[row][col]!=0){
+                boardempty=false;
+            }
+            else{
+                boardhasempty=true;
+            }
+        }
+    }
+    //returns an integer corresponding to an outcome
+    if (boardempty){
+        //board is completely empty
+        return 0;
+    }
+    for (int row=0;row<6;row+=2){
+        if (board[row][0]==board[row][1] && board[row][1]==board[row][2] && board[row][0]!=0){
+            //returns the integer corresponding to the player that won on a horizontal
+            return board[row][0];
+        }
+    }
+    for (int col=0;col<3;col++){
+        if (board[0][col]==board[2][col] && board[2][col]==board[4][col] && board[0][col]!=0){
+            //returns the integer corresponding to the player that won on a vertical
+            return board[0][col];
+        }
+    }
+    //returns the integer corresponding to the player that won on a diagonal
+    if (board[0][0]==board[2][1] && board[2][1]==board[4][2] && board[0][0]!=0){
+        return board[0][0];
+    }
+    else if (board[0][2]==board[2][1] && board[2][1]==board[4][0] && board[0][2]!=0){
+        return board[0][2];
+    }
+    else if (boardhasempty){
+        return 4;
+    }
+    return 3;
+}
+
+pair<int, int> xvertwincond(){
+    //check for the bot if x's (1) can win on a vertical
+    for (int col=0;col<3;col++){
+        if (board[0][col]==board[2][col] && board[0][col]!=0 && board[4][col]==0 && board[0][col]==1){
+            return make_pair(4, col);
+        }
+        else if (board[2][col]==board[4][col] && board[2][col]!=0 && board[0][col]==0 && board[2][col]==1){
+            return make_pair(0, col);
+        }
+        else if (board[0][col]==board[4][col] && board[0][col]!=0 && board[2][col]==0 && board[0][col]==1){
+            return make_pair(2, col);
+        }
+    }
+    //void return
+    return make_pair(-1, -1);
+}
+
+pair<int, int> xhorwincond(){
+    //check for the bot if x's (1) can win on a horizontal
+    for (int row=0;row<6;row+=2){
+        if (board[row][0]==board[row][1] && board[row][0]!=0 && board[row][2]==0 && board[row][0]==1){
+            return make_pair(row, 2);
+        }
+        else if (board[row][1]==board[row][2] && board[row][1]!=0 && board[row][0]==0 && board[row][1]==1){
+            return make_pair(row, 0);
+        }
+        else if (board[row][0]==board[row][2] && board[row][0]!=0 && board[row][1]==0 && board[row][0]==1){
+            return make_pair(row, 1);
+        }
+    }
+    //void return
+    return make_pair(-1, -1);
+}
+
+pair<int, int> xdiagwincond(){
+    //check for the bot if x's (1) can win on a diagonal
+    if (board[0][0]==board[2][1] && board[0][0]!=0 && board[4][2]==0 && board[0][0]==1){
+        return make_pair(4, 2);
+    }
+    else if (board[2][1]==board[4][2] && board[2][1]!=0 && board[0][0]==0 && board[2][1]==1){
+        return make_pair(0, 0);
+    }
+    else if (board[0][0]==board[4][2] && board[0][0]!=0 && board[2][1]==0 && board[0][0]==1){
+        return make_pair(2, 1);
+    }
+    else if (board[0][2]==board[2][1] && board[0][2]!=0 && board[4][0]==0 && board[0][2]==1){
+        return make_pair(4, 0);
+    }
+    else if (board[2][1]==board[4][0] && board[2][1]!=0 && board[0][2]==0 && board[2][1]==1){
+        return make_pair(0, 2);
+    }
+    else if (board[0][2]==board[4][0] && board[0][2]!=0 && board[2][1]==0 && board[0][2]==1){
+        return make_pair(2, 1);
+    }
+    //void return 
+    return make_pair(-1, -1);
+}
+
+pair<int, int> overtwincond(){
+    //check for the bot if o's (1) can win on a vertical
+    for (int col=0;col<3;col++){
+        if (board[0][col]==board[2][col] && board[0][col]!=0 && board[4][col]==0 && board[0][col]==2){
+            return make_pair(4, col);
+        }
+        else if (board[2][col]==board[4][col] && board[2][col]!=0 && board[0][col]==0 && board[2][col]==2){
+            return make_pair(0, col);
+        }
+        else if (board[0][col]==board[4][col] && board[0][col]!=0 && board[2][col]==0 && board[0][col]==2){
+            return make_pair(2, col);
+        }
+    }
+    //void return
+    return make_pair(-1, -1);
+}
+
+pair<int, int> ohorwincond(){
+    //check for the bot if o's (1) can win on a horizontal
+    for (int row=0;row<6;row+=2){
+        if (board[row][0]==board[row][1] && board[row][0]!=0 && board[row][2]==0 && board[row][0]==2){
+            return make_pair(row, 2);
+        }
+        else if (board[row][1]==board[row][2] && board[row][1]!=0 && board[row][0]==0 && board[row][1]==2){
+            return make_pair(row, 0);
+        }
+        else if (board[row][0]==board[row][2] && board[row][0]!=0 && board[row][1]==0 && board[row][0]==2){
+            return make_pair(row, 1);
+        }
+    }
+    //void return
+    return make_pair(-1, -1);
+}
+
+pair<int, int> odiagwincond(){
+    //check for the bot if o's (1) can win on a diagonal
+    if (board[0][0]==board[2][1] && board[0][0]!=0 && board[4][2]==0 && board[0][0]==2){
+        return make_pair(4, 2);
+    }
+    else if (board[2][1]==board[4][2] && board[2][1]!=0 && board[0][0]==0 && board[2][1]==2){
+        return make_pair(0, 0);
+    }
+    else if (board[0][0]==board[4][2] && board[0][0]!=0 && board[2][1]==0 && board[0][0]==2){
+        return make_pair(2, 1);
+    }
+    else if (board[0][2]==board[2][1] && board[0][2]!=0 && board[4][0]==0 && board[0][2]==2){
+        return make_pair(4, 0);
+    }
+    else if (board[2][1]==board[4][0] && board[2][1]!=0 && board[0][2]==0 && board[2][1]==2){
+        return make_pair(0, 2);
+    }
+    else if (board[0][2]==board[4][0] && board[0][2]!=0 && board[2][1]==0 && board[0][2]==2){
+        return make_pair(2, 1);
+    }
+    //void return
+    return make_pair(-1, -1);
+}
+
+int wincondpos(){
+    //checks if the bot is first and gives the proper order of if statements so the bot prioritizes winning over blocking
+    if (!botfirst){
+        if (overtwincond()!=make_pair(-1, -1)){
+            return 1;
+        }
+        else if (ohorwincond()!=make_pair(-1, -1)){
+            return 2;
+        }
+        else if (odiagwincond()!=make_pair(-1, -1)){
+            return 3;
+        }
+        else if (xvertwincond()!=make_pair(-1, -1)){
+            return 4;
+        }
+        else if (xhorwincond()!=make_pair(-1, -1)){
+            return 5;
+        }
+        else if (xdiagwincond()!=make_pair(-1, -1)){
+            return 6;
+        }
+    }
+    else{
+        if (xvertwincond()!=make_pair(-1, -1)){
+            return 4;
+        }
+        else if (xhorwincond()!=make_pair(-1, -1)){
+            return 5;
+        }
+        else if (xdiagwincond()!=make_pair(-1, -1)){
+            return 6;
+        }
+        else if (overtwincond()!=make_pair(-1, -1)){
+            return 1;
+        }
+        else if (ohorwincond()!=make_pair(-1, -1)){
+            return 2;
+        }
+        else if (odiagwincond()!=make_pair(-1, -1)){
+            return 3;
+        }
+    }
+    return 0;
+}
+
+void oprioritize(int botoutput, int winpos){
+    //moves for the bot if it is playing as o
+    if (winpos==1){
+        int row=overtwincond().first;
+        int column=overtwincond().second;
+        board[row][column]=botoutput;
+        board[(row+1)][column]=botoutput;
+    }
+    else if (winpos==2){
+        int row=ohorwincond().first;
+        int column=ohorwincond().second;
+        board[row][column]=botoutput;
+        board[(row+1)][column]=botoutput;
+    }
+    else if (winpos==3){
+        int row=odiagwincond().first;
+        int column=odiagwincond().second;
+        board[row][column]=botoutput;
+        board[(row+1)][column]=botoutput;
+    }
+    else if (winpos==4){
+        int row=xvertwincond().first;
+        int column=xvertwincond().second;
+        board[row][column]=botoutput;
+        board[(row+1)][column]=botoutput;
+    }
+    else if (winpos==5){
+        int row=xhorwincond().first;
+        int column=xhorwincond().second;
+        board[row][column]=botoutput;
+        board[(row+1)][column]=botoutput;
+    }
+    else if (winpos==6){
+        int row=xdiagwincond().first;
+        int column=xdiagwincond().second;
+        board[row][column]=botoutput;
+        board[(row+1)][column]=botoutput;
+    }
+}
+
+void xprioritize(int botoutput, int winpos){
+    //moves for the bot if it is playing as x
+    if (winpos==4){
+        int row=xvertwincond().first;
+        int column=xvertwincond().second;
+        board[row][column]=botoutput;
+        board[(row+1)][column]=botoutput;
+    }
+    else if (winpos==5){
+        int row=xhorwincond().first;
+        int column=xhorwincond().second;
+        board[row][column]=botoutput;
+        board[(row+1)][column]=botoutput;
+    }
+    else if (winpos==6){
+        int row=xdiagwincond().first;
+        int column=xdiagwincond().second;
+        board[row][column]=botoutput;
+        board[(row+1)][column]=botoutput;
+    }
+    else if(winpos==1){
+        int row=overtwincond().first;
+        int column=overtwincond().second;
+        board[row][column]=botoutput;
+        board[(row+1)][column]=botoutput;
+    }
+    else if (winpos==2){
+        int row=ohorwincond().first;
+        int column=ohorwincond().second;
+        board[row][column]=botoutput;
+        board[(row+1)][column]=botoutput;
+    }
+    else if (winpos==3){
+        int row=odiagwincond().first;
+        int column=odiagwincond().second;
+        board[row][column]=botoutput;
+        board[(row+1)][column]=botoutput;
+    }
+}
+
+int cornercheck(int botXorO){
+    //checks corners for the bot
+    int cornersXorO[]={board[0][0], board[0][2], board[4][0], board[4][2]};
+    int opponent;
+    if (botXorO==1){
+        opponent=2;
+    }
+    else{
+        opponent=1;
+    }
+    for (int i=0;i<4;i++){
+        if (cornersXorO[i]==opponent){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void randcorner(int botXorO){
+    //selects a random corner for the bot to play in
+    while (true){
+        int corner=rand()%4;
+        if (corner==0 && board[0][0]==0){
+            board[0][0]=botXorO;
+            board[1][0]=botXorO;
+            break;
+        }
+        else if (corner==1 && board[0][2]==0){
+            board[0][2]=botXorO;
+            board[1][2]=botXorO;
+            break;
+        }
+        else if (corner==2 && board[4][0]==0){
+            board[4][0]=botXorO;
+            board[5][0]=botXorO;
+            break;
+        }
+        else if (corner==3 && board[4][2]==0){
+            board[5][2]=botXorO;
+            board[4][2]=botXorO;
+            break;
+        }
+    }
+}
+
+void bot(){
+    int randrow;
+    int randcolumn;
+    int botoutput;
+    int winpos=wincondpos();
+    //checks if the bot is x or o
+    if (botfirst){
+        botoutput=1;
+    }
+    else{
+        botoutput=2;
+    }
+    if (singleplayer && playerturn==botoutput){
+        if (winpos!=0){
+            //wins and then blocks
+            if (botoutput==1){
+                xprioritize(botoutput, winpos);
+            }
+            else if (botoutput==2){
+                oprioritize(botoutput, winpos);
+            }
+        }
+        else if (cornercheck(botoutput)==1 && board[2][1]==0){
+            //plays a random corner or the center
+            int cornerorcenter=rand()%2;
+            if (cornerorcenter==0){
+                board[2][1]=botoutput;
+                board[3][1]=botoutput;
+            }
+            else if (cornerorcenter==1){
+                randcorner(botoutput);
+            }
+        }
+        else if (gameoutcome()==0){
+            randcorner(botoutput);
+        }
+        else{
+            //random move
+            while (true){
+                randrow=(rand()%3)*2;
+                randcolumn=rand()%3;
+                if (board[randrow][randcolumn]==0){
+                    board[randrow][randcolumn]=botoutput;
+                    board[randrow+1][randcolumn]=botoutput;
+                    break;
+                }
+            }
+        }
+    }
+    if (botoutput==2){
+        playerturn=1;
+    }
+    else{
+        playerturn=2;
+    }
+}
+
+/*
+ \/ | /\ |
+_/\_|_\/_|____
+    |    |    
+____|____|____
+    |    |    
+    |    |    
+*/
