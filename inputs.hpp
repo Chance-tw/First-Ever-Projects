@@ -73,7 +73,7 @@ class inputs{
         while (true){
             cout<<"Enter the amount of rain (in inches) for "+ months[instance]+": ";
             getline(cin, rain);
-            if (isnum(rain, "double") and rain.find(' ')==string::npos){
+            if (isnum(rain, "double") && rain.find(' ')==string::npos){
                 rainfall.push_back(stod(rain));
                 break;
             }
